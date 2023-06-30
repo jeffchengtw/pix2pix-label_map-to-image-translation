@@ -19,9 +19,9 @@ def preprocess_label_chapt(input: np.ndarray) -> np.ndarray:
 
 
 class MyDataset(Dataset):
-    def __init__(self, data_path, phase):
+    def __init__(self, data_path, phase, target_size):
         self.phase = phase
-        self.target_size = (128, 128)  # w, h
+        self.target_size = target_size  # w, h
 
         if self.phase == 'train':
             self.real = collect_image_files(os.path.join(data_path, 'train_real'))

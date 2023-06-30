@@ -17,16 +17,32 @@ def initial(args):
 
     input_nc = args.input_nc
     output_nc = args.output_nc
+    input_w, input_h = args.input_w, args.input_h
     num_D = args.num_D
     n_layer_D = args.n_layer_D
     dataset = args.dataset
     n_downsampling = args.n_downsampling
     
-    train_dataset = MyDataset(os.path.join('dataset', dataset), 'train')
+    train_dataset = MyDataset(
+        data_path=os.path.join('dataset', dataset), 
+        phase='train', 
+        target_size=(input_w, input_h)
+    )
+    
     train_loader = DataLoader(train_dataset, batch_size=1)
 
-    netG = Generator(input_nc=input_nc, output_nc=output_nc, n_downsampling=n_downsampling, cfg=args).to(device)
-    netD = MultiscaleDiscriminator(input_nc=(0+output_nc), num_D=num_D, n_layers=n_layer_D).to(device)
+    netG = Generator(
+        input_nc=input_nc, 
+        output_nc=output_nc, 
+        n_downsampling=n_downsampling, 
+        cfg=args
+    ).to(device)
+    
+    netD = MultiscaleDiscriminator(
+        input_nc=(0+output_nc),
+        num_D=num_D, 
+        n_layers=n_layer_D
+    ).to(device)
 
     criterionGAN = GANLoss(use_lsgan=True).to(device)
     criterionFeat = FeatureLoss(num_D=num_D, n_layers_D=n_layer_D)

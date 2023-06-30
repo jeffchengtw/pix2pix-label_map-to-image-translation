@@ -2,6 +2,7 @@ from .resnet_block import ResnetBlock
 import torch.nn as nn
 import torch
 from torchsummary import summary
+from utils.visualization import*
 
 class Downsample(nn.Module):
     def __init__(self, n_downsampling, ngf=64, norm_layer=nn.BatchNorm2d, activation=None):
@@ -53,9 +54,11 @@ class ResBlock(nn.Module):
 
 class Generator(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=6, activation='relu', norm_layer=nn.BatchNorm2d, 
-                 padding_type='reflect'):
+                 padding_type='reflect', cfg=None):
         super(Generator, self).__init__()  
 
+        self.config = cfg
+        self.debug_mode = cfg.debug_mode
         activation = nn.ReLU(True) if activation == 'relu' else None
 
         self.input_block = nn.Sequential(
@@ -76,10 +79,12 @@ class Generator(nn.Module):
         )
 
     
-    def forward(self, input):
+    def forward(self, input, epoch=None, filename=None):
         x = self.input_block(input)
         x = self.down_sample(x) # 512 channels
         x = self.res_block(x)
+        if self.debug_mode :
+            save_feature_maps(x, os.path.join(self.config.project_dir, 'visualization', 'G_feature_maps'), filename, epoch)
         x = self.up_sample(x)
         output = self.output_block(x)
         return output

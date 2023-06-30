@@ -20,18 +20,19 @@ def initial(args):
     num_D = args.num_D
     n_layer_D = args.n_layer_D
     dataset = args.dataset
+    n_downsampling = args.n_downsampling
     
-    train_dataset = MyDataset(os.path.join('dataset', dataset))
+    train_dataset = MyDataset(os.path.join('dataset', dataset), 'train')
     train_loader = DataLoader(train_dataset, batch_size=1)
 
-    netG = Generator(input_nc=input_nc, output_nc=output_nc).to(device)
-    netD = MultiscaleDiscriminator(input_nc=(input_nc+output_nc), num_D=num_D, n_layers=n_layer_D).to(device)
+    netG = Generator(input_nc=input_nc, output_nc=output_nc, n_downsampling=n_downsampling, cfg=args).to(device)
+    netD = MultiscaleDiscriminator(input_nc=(0+output_nc), num_D=num_D, n_layers=n_layer_D).to(device)
 
     criterionGAN = GANLoss(use_lsgan=True).to(device)
     criterionFeat = FeatureLoss(num_D=num_D, n_layers_D=n_layer_D)
 
-    optimizer_G = optim.Adam(netG.parameters(), lr=0.001, betas=(0.9, 0.999))
-    optimizer_D = optim.Adam(netD.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer_G = optim.Adam(netG.parameters(), lr=0.0001, betas=(0.9, 0.999))
+    optimizer_D = optim.Adam(netD.parameters(), lr=0.0001, betas=(0.9, 0.999))
 
     logger = LossLogger(log_dir='logs')
 
@@ -74,18 +75,18 @@ def train(input, epoch):
         fake_image = netG(input_label)
 
         # fake image detection loss
-        input_fake = torch.cat((input_label, fake_image.detach()), dim=1)
-        pred_fake_pool = netD.forward(input_fake)
+        #input_fake = torch.cat((input_label, fake_image.detach()), dim=1)
+        pred_fake_pool = netD.forward(fake_image.detach())
         loss_D_fake = criterionGAN(pred_fake_pool, False)        
 
         # Real Detection and Loss
-        input_real = torch.cat((input_label, real.detach()), dim=1)
-        pred_real = netD.forward(input_real)
+        #input_real = torch.cat((input_label, real.detach()), dim=1)
+        pred_real = netD.forward(real.detach())
         loss_D_real = criterionGAN(pred_real, True)
 
         # GAN loss (Fake Passability Loss)    
-        input_g = torch.cat((input_label, fake_image), dim=1)    
-        pred_fake = netD.forward(input_g)
+        #input_g = torch.cat((input_label, fake_image), dim=1)    
+        pred_fake = netD.forward(fake_image)
         loss_G_fake = criterionGAN(pred_fake, True)     
 
         # feat loss

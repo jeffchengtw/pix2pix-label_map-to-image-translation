@@ -10,7 +10,11 @@ def collect_file_paths(data_path):
 
     matched_files = match_files(real_files, label_files, label_path)
 
+    if not matched_files:
+        return None, None
+
     return zip(*matched_files)
+
 
 def collect_image_files(data_path):
     image_files = []

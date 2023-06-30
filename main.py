@@ -1,10 +1,9 @@
-
 import torch
 import torch.optim as optim
 from tqdm import tqdm
 from dataset import MyDataset
 from torch.utils.data import DataLoader
-from models.generator import Generator, GlobalGenerator
+from models.generator import Generator
 from models.discriminator import MultiscaleDiscriminator
 from criterion.loss import GANLoss, FeatureLoss
 from utils.visualization import*
@@ -28,18 +27,19 @@ def initial(args):
         phase='train', 
         target_size=(input_w, input_h)
     )
-    
+    label_nc = train_dataset.label_nc
     train_loader = DataLoader(train_dataset, batch_size=1)
+    
 
     netG = Generator(
-        input_nc=input_nc, 
+        input_nc=label_nc, 
         output_nc=output_nc, 
         n_downsampling=n_downsampling, 
         cfg=args
     ).to(device)
     
     netD = MultiscaleDiscriminator(
-        input_nc=(0+output_nc),
+        input_nc=(output_nc+label_nc),
         num_D=num_D, 
         n_layers=n_layer_D
     ).to(device)
@@ -65,16 +65,18 @@ def initial(args):
         'logger': logger
     }
 
-def train(input, epoch):
-    train_loader = input['train_loader']
-    optimizer_G = input['optimizer_G']
-    optimizer_D = input['optimizer_D']
-    netG = input['netG']
-    netD = input['netD']
-    criterionGAN = input['criterionGAN']
-    criterionFeat = input['criterionFeat']
-    logger = input['logger']
+def train(training_item, epoch):
+    train_loader = training_item['train_loader']
+    optimizer_G = training_item['optimizer_G']
+    optimizer_D = training_item['optimizer_D']
+    netG = training_item['netG']
+    netD = training_item['netD']
+    criterionGAN = training_item['criterionGAN']
+    criterionFeat = training_item['criterionFeat']
+    logger = training_item['logger']
     logger.epoch_losses = {}  # 初始化 epoch_losses 字典
+    
+    
     
     for batch in tqdm(train_loader):
         real = batch['real_tensor'].to(device)
@@ -87,22 +89,23 @@ def train(input, epoch):
         # test 
         # create one-hot vector for label map 
         input_label = label
+        
         # fake image gerneration
         fake_image = netG(input_label)
 
         # fake image detection loss
-        #input_fake = torch.cat((input_label, fake_image.detach()), dim=1)
-        pred_fake_pool = netD.forward(fake_image.detach())
+        input_fake = torch.cat((input_label, fake_image.detach()), dim=1)
+        pred_fake_pool = netD.forward(input_fake)
         loss_D_fake = criterionGAN(pred_fake_pool, False)        
 
         # Real Detection and Loss
-        #input_real = torch.cat((input_label, real.detach()), dim=1)
-        pred_real = netD.forward(real.detach())
+        input_real = torch.cat((input_label, real.detach()), dim=1)
+        pred_real = netD.forward(input_real)
         loss_D_real = criterionGAN(pred_real, True)
 
         # GAN loss (Fake Passability Loss)    
-        #input_g = torch.cat((input_label, fake_image), dim=1)    
-        pred_fake = netD.forward(fake_image)
+        input_g = torch.cat((input_label, fake_image), dim=1)    
+        pred_fake = netD.forward(input_g)
         loss_G_fake = criterionGAN(pred_fake, True)     
 
         # feat loss

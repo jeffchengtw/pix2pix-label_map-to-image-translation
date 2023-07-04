@@ -28,7 +28,7 @@ def initial(args):
         target_size=(input_w, input_h)
     )
     label_nc = train_dataset.label_nc
-    train_loader = DataLoader(train_dataset, batch_size=1)
+    train_loader = DataLoader(train_dataset, batch_size=8)
     
 
     netG = Generator(
@@ -47,8 +47,8 @@ def initial(args):
     criterionGAN = GANLoss(use_lsgan=True).to(device)
     criterionFeat = FeatureLoss(num_D=num_D, n_layers_D=n_layer_D)
 
-    optimizer_G = optim.Adam(netG.parameters(), lr=0.0001, betas=(0.9, 0.999))
-    optimizer_D = optim.Adam(netD.parameters(), lr=0.0001, betas=(0.9, 0.999))
+    optimizer_G = optim.Adam(netG.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer_D = optim.Adam(netD.parameters(), lr=0.001, betas=(0.9, 0.999))
 
     logger = LossLogger(log_dir='logs')
 

@@ -17,7 +17,7 @@ def save_tensor_2(input_tensor, path, filename):
 
     
 
-def tensor2im(image_tensor, imtype=np.uint8, normalize=False):
+def tensor2im(image_tensor, imtype=np.uint8, normalize=True):
 
     if isinstance(image_tensor, list):
         image_numpy = []

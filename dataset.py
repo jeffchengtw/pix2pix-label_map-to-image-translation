@@ -57,8 +57,8 @@ class MyDataset(Dataset):
             label_path = self.label[index]
 
         # read from disk
-        real_image = cv2.imread(real_path, cv2.IMREAD_UNCHANGED) if self.phase == 'train' else None
-        label_image = cv2.imread(label_path, cv2.IMREAD_UNCHANGED)
+        real_image = cv2.imread(real_path, cv2.IMREAD_GRAYSCALE) if self.phase == 'train' else None
+        label_image = cv2.imread(label_path, cv2.IMREAD_GRAYSCALE)
 
         # image process
         processed_real = preprocess(real_image, self.target_size, 'resize') if self.phase == 'train' else None
@@ -76,7 +76,7 @@ class MyDataset(Dataset):
             return {
                 'filename': filename,
                 'real_tensor': real_tensor,
-                'label_tensor': label_tensor
+                'label_tensor': label_tensor*255.0
             }
         elif self.phase == 'test':
             return {

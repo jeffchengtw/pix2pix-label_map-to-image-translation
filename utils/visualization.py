@@ -6,13 +6,13 @@ import numpy as np
 import os
 
 
-def save_tensor_2(input_tensor, path, filename):
+def save_tensor_2(input_tensor, path, filename, epoch=None):
     # 檢查保存路徑是否存在，如果不存在則創建
     os.makedirs(path, exist_ok=True)
     
-    for idx, each_image in enumerate(input_tensor):
+    for idx, (each_image, each_name) in enumerate(zip(input_tensor, filename)):
         img_arr = tensor2im(each_image)
-        file_path = os.path.join(path, f"{filename}_{idx}.jpg")
+        file_path = os.path.join(path, f"epoch_{epoch}_{each_name}_{idx}.jpg")
         cv2.imwrite(file_path, img_arr)
 
     

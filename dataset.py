@@ -27,9 +27,10 @@ def check_labelnc(image_paths: 'list[str]') -> 'list':
 
 
 class MyDataset(Dataset):
-    def __init__(self, data_path, phase, target_size):
+    def __init__(self, data_path, phase, input_nc, target_size):
         self.phase = phase
         self.target_size = target_size  # w, h
+        self.input_nc = input_nc
         self.label_nc = 0
 
         if self.phase == 'train':
@@ -57,7 +58,8 @@ class MyDataset(Dataset):
             label_path = self.label[index]
 
         # read from disk
-        real_image = cv2.imread(real_path, cv2.IMREAD_GRAYSCALE) if self.phase == 'train' else None
+        real_image = cv2.imread(real_path, cv2.IMREAD_GRAYSCALE if self.input_nc == 1 else cv2.IMREAD_UNCHANGED) if self.phase == 'train' else None
+
         label_image = cv2.imread(label_path, cv2.IMREAD_GRAYSCALE)
 
         # image process
@@ -81,7 +83,7 @@ class MyDataset(Dataset):
         elif self.phase == 'test':
             return {
                 'filename': filename,
-                'label_tensor': label_tensor
+                'label_tensor': label_tensor*255.0
             }
 
         

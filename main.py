@@ -25,21 +25,22 @@ def initial(args):
     train_dataset = MyDataset(
         data_path=os.path.join('dataset', dataset), 
         phase='train', 
+        input_nc=input_nc,
         target_size=(input_w, input_h)
     )
-    label_nc = train_dataset.label_nc
+    args.label_nc = train_dataset.label_nc
     train_loader = DataLoader(train_dataset, batch_size=8)
     
 
     netG = Generator(
-        input_nc=label_nc, 
+        input_nc=args.label_nc, 
         output_nc=output_nc, 
         n_downsampling=n_downsampling, 
         cfg=args
     ).to(device)
     
     netD = MultiscaleDiscriminator(
-        input_nc=(output_nc+label_nc),
+        input_nc=(output_nc+args.label_nc),
         num_D=num_D, 
         n_layers=n_layer_D
     ).to(device)
@@ -133,7 +134,7 @@ def train(training_item, epoch):
 
         if epoch % 20 == 0 :
             save_dir = os.path.join(args.project_dir, 'visualization/fake')
-            save_tensor_2(fake_image.detach(), save_dir, f'{epoch}_{filename}.bmp')
+            save_tensor_2(fake_image.detach(), save_dir, filename, epoch)
 
     logger.log_epoch_losses(epoch)
     
@@ -161,6 +162,7 @@ if __name__ == '__main__':
             os.makedirs(ckpt_dir, exist_ok=True)
             torch.save({
                 'epoch' : epoch,
+                'config' : args,
                 'generator' : train_result['netG'].state_dict(),
                 'discriminator' : train_result['netD'].state_dict(),
             }, ckpt_dir+f'/epoch_{epoch}.pt')

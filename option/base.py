@@ -11,7 +11,7 @@ class ArgumentParserWrapper:
         self.parser.add_argument('--epoch', type=int, default=500, help='Number of epochs')
         self.parser.add_argument('--input_h', type=int, default=128, help='input height')
         self.parser.add_argument('--input_w', type=int, default=128, help='input width')
-        self.parser.add_argument('--input_nc', type=int, default=1, help='Number of input channels')
+        self.parser.add_argument('--input_nc', type=int, default=3, help='Number of input channels')
         self.parser.add_argument('--output_nc', type=int, default=3, help='Number of output channels')
         self.parser.add_argument('--num_D', type=int, default=2, help='Number of discriminators')
         self.parser.add_argument('--n_layer_D', type=int, default=3, help='Number of layers in discriminators')

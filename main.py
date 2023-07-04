@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 from tqdm import tqdm
 from dataset import MyDataset
+from train import train
 from torch.utils.data import DataLoader
 from models.generator import Generator
 from models.discriminator import MultiscaleDiscriminator
@@ -48,12 +49,13 @@ def initial(args):
     criterionGAN = GANLoss(use_lsgan=True).to(device)
     criterionFeat = FeatureLoss(num_D=num_D, n_layers_D=n_layer_D)
 
-    optimizer_G = optim.Adam(netG.parameters(), lr=0.001, betas=(0.9, 0.999))
-    optimizer_D = optim.Adam(netD.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer_G = optim.Adam(netG.parameters(), lr=args.lr, betas=(0.9, 0.999))
+    optimizer_D = optim.Adam(netD.parameters(), lr=args.lr, betas=(0.9, 0.999))
 
-    logger = LossLogger(log_dir='logs')
+    logger = Logger(log_dir=os.path.join(args.project_dir, 'logs'))
 
     return {
+        'device': device,
         'num_D': num_D,
         'n_layer_D': n_layer_D,
         'train_loader': train_loader,
@@ -66,83 +68,6 @@ def initial(args):
         'logger': logger
     }
 
-def train(training_item, epoch):
-    train_loader = training_item['train_loader']
-    optimizer_G = training_item['optimizer_G']
-    optimizer_D = training_item['optimizer_D']
-    netG = training_item['netG']
-    netD = training_item['netD']
-    criterionGAN = training_item['criterionGAN']
-    criterionFeat = training_item['criterionFeat']
-    logger = training_item['logger']
-    logger.epoch_losses = {}  # 初始化 epoch_losses 字典
-    
-    
-    
-    for batch in tqdm(train_loader):
-        real = batch['real_tensor'].to(device)
-        label = batch['label_tensor'].to(device)
-        filename = batch['filename']
-        # zero grad
-        optimizer_G.zero_grad()
-        optimizer_D.zero_grad()
-
-        # test 
-        # create one-hot vector for label map 
-        input_label = label
-        
-        # fake image gerneration
-        fake_image = netG(input_label)
-
-        # fake image detection loss
-        input_fake = torch.cat((input_label, fake_image.detach()), dim=1)
-        pred_fake_pool = netD.forward(input_fake)
-        loss_D_fake = criterionGAN(pred_fake_pool, False)        
-
-        # Real Detection and Loss
-        input_real = torch.cat((input_label, real.detach()), dim=1)
-        pred_real = netD.forward(input_real)
-        loss_D_real = criterionGAN(pred_real, True)
-
-        # GAN loss (Fake Passability Loss)    
-        input_g = torch.cat((input_label, fake_image), dim=1)    
-        pred_fake = netD.forward(input_g)
-        loss_G_fake = criterionGAN(pred_fake, True)     
-
-        # feat loss
-        loss_G_GAN_Feat = criterionFeat(pred_fake, pred_real)
-        
-                    
-        # backward
-        loss_D = loss_D_fake + loss_D_real*0.5
-        loss_G = loss_G_fake + loss_G_GAN_Feat
-        loss_D.backward()
-        loss_G.backward()
-
-        optimizer_D.step()
-        optimizer_G.step()
-
-        # 累加損失
-        logger.update_epoch_losses({
-            'Discriminator Fake Loss': loss_D_fake.item(),
-            'Discriminator Real Loss': loss_D_real.item(),
-            'Discriminator Loss': loss_D.item(),
-            'Generator Fake Loss': loss_G_fake.item(),
-            'Generator Feature Loss': loss_G_GAN_Feat.item(),
-            'Generator Loss': loss_G.item()
-        })
-
-        if epoch % 20 == 0 :
-            save_dir = os.path.join(args.project_dir, 'visualization/fake')
-            save_tensor_2(fake_image.detach(), save_dir, filename, epoch)
-
-    logger.log_epoch_losses(epoch)
-    
-    return{
-        'netG': netG,
-        'netD': netD,
-        'logger': logger
-    }
 
 
 if __name__ == '__main__':
@@ -152,10 +77,9 @@ if __name__ == '__main__':
     arg_parser = ArgumentParserWrapper()
     args = arg_parser.parse_args()
 
-
     training_config = initial(args)
     for epoch in range(args.epoch):
-        train_result = train(training_config, epoch)
+        train_result = train(args, training_config, epoch)
 
         if epoch % 20 == 0:
             ckpt_dir = os.path.join(args.project_dir, 'ckpt')
@@ -166,6 +90,9 @@ if __name__ == '__main__':
                 'generator' : train_result['netG'].state_dict(),
                 'discriminator' : train_result['netD'].state_dict(),
             }, ckpt_dir+f'/epoch_{epoch}.pt')
+    
+    print('End !!!')
+    print('logs dir : tensorboard --logdir= ', os.path.join(args.project_dir, 'logs'))
 
 
 

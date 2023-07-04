@@ -17,6 +17,11 @@ class ArgumentParserWrapper:
         self.parser.add_argument('--n_layer_D', type=int, default=3, help='Number of layers in discriminators')
         self.parser.add_argument('--n_downsampling', type=int, default=1, help='Number of downsampling')
 
+        # train parameter
+        self.parser.add_argument('--lr', type=float, default=0.0002, help='learning rate')
+        self.parser.add_argument('--decay_rate', type=float, default=0.2, help='# of iter to linearly decay learning rate to zero')
+        
+
     def parse_args(self):
         args = self.parser.parse_args()
 

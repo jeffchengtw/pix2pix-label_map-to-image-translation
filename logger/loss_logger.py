@@ -1,6 +1,6 @@
 from torch.utils.tensorboard import SummaryWriter
 
-class LossLogger:
+class Logger:
     def __init__(self, log_dir):
         self.writer = SummaryWriter(log_dir)
         self.epoch_losses = {}
@@ -22,6 +22,10 @@ class LossLogger:
                 self.epoch_losses[name] = 0.0
             self.epoch_losses[name] += loss
         self.batch_num += 1
+    
+    def log_learning_rates(self, learning_rates, epoch):
+        for name, learning_rate in learning_rates.items():
+            self.writer.add_scalar(f'Learning Rate/{name}', learning_rate, epoch)
 
     def close(self):
         self.writer.close()
